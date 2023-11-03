@@ -41,6 +41,7 @@ class BaseDeDatos:
 
             conn.commit()
             id_del_ingresado = cursor.fetchone()[0]  # aqui se obtiene el id del registro que se acaba de ingresar
+            print("id del ingresado:", id_del_ingresado)
             cursor.close()
             conn.close()
             if id_del_ingresado is None:#si se ejecuta una query donde no se retorna un id, se retorna True para seguir su flujo
@@ -48,6 +49,8 @@ class BaseDeDatos:
             else:#si se ejecuta una query donde se retorna un id, se retorna el id correspondiente
                 return id_del_ingresado
         except psycopg2.Error as e:
+            if e == "no results to fetch":#significa que fetch no se ejecuto correctamente ya que la query no tiene un returning
+                return True
             print("Error al conectar a la base de datos:", e)
             return False
 

@@ -6,8 +6,8 @@ import controllers
 
 class Equipo_Controller:
     def existe_equipo(database, id_equipo):
-        query = ("select count(id_equipo) from Equipos where id_equipo = '" + id_equipo + "'")
-        if database.get(query)[0][0] == 1:
+        query = ("select count(id_equipo) from equipos where id_equipo = '" + id_equipo + "'")
+        if database.get(query)[0][0] == 1:#obtiene el valor de la query y lo compara con 1, si es 1 retorna True, si es 0 retorna False
             return True
         elif database.get(query)[0][0] == 0:
             return False
@@ -16,7 +16,7 @@ class Equipo_Controller:
 
     def crear_equipo(database):
         equipo = Equipos()
-        id_equipo = input("Por favor ingrese id del equipo: ")
+        id_equipo = input("Por favor ingrese id del equipo: ") #solo sirve para comprobar si el id de ese equipo existe y hay que añadirle que solo acepte numeros
         existe = Equipo_Controller.existe_equipo(database, id_equipo)
         if existe is False:
             nombre = input("Por favor ingrese el nombre del equipo: ")
@@ -65,21 +65,25 @@ class Equipo_Controller:
         return eq_menu.Equipo_Menu.menu_equipos(database)
 
     def listar_equipos(database):
-        for equipo in database:
-            print("********** Equipo: " + equipo.getIdEquipo() + "********** ")
+        query = ("select * from Equipos")
+        equipos = database.get(query)
+        for equipo in equipos:
+            print("********** Equipo con id: " + str(equipo[0]) + "********** ")
             print(
                 "nombre: "
-                + equipo.getNombre()
+                + str(equipo[1])
                 + "\n"
                 + "ciudad: "
-                + equipo.getCiudad()
+                + str(equipo[2])
                 + "\n"
                 + "presidente: "
-                + equipo.getPresidente()
+                + str(equipo[3])
                 + "\n"
             )
-            print("Jugadores en el equipo: " + equipo.getIdEquipo())
-            controllers.jugador_controller.Jugador_Controller.listar_jugadores(equipo)
+            #print("Jugadores en el equipo: " + str(equipo[0]))
+            #controllers.jugador_controller.Jugador_Controller.listar_jugadores(equipo)
+            #print("Jugadores en el equipo: " + equipo.getIdEquipo())
+            #controllers.jugador_controller.Jugador_Controller.listar_jugadores(equipo)
         return eq_menu.Equipo_Menu.menu_equipos(database)
 
     def eliminar_equipo(database):
@@ -102,19 +106,24 @@ class Equipo_Controller:
         if Equipo_Controller.existe_equipo(database, id_equipo) is False:
             print("El equipo consultado no existe")
         else:
-            equipo = database[Equipo_Controller.existe_equipo(database, id_equipo)]
-            print(
-                "Nombre: "
-                + equipo.getNombre()
-                + "\n"
-                + "Ciudad: "
-                + equipo.getCiudad()
-                + "\n"
-                + "Presidente: "
-                + equipo.getPresidente()
-                + "\n"
-            )
-            controllers.jugador_controller.Jugador_Controller.listar_jugadores(equipo)
+            query = ("select * from Equipos where id_equipo = '" + id_equipo + "'")
+            equipo = database.get(query)
+            for elemento in equipo:
+                print("********** Equipo: " + str(elemento[0]) + "********** ")
+                print(
+                    "nombre: "
+                    + str(elemento[1])
+                    + "\n"
+                    + "ciudad: "
+                    + str(elemento[2])
+                    + "\n"
+                    + "presidente: "
+                    + str(elemento[3])
+                    + "\n"
+                )
+                #print("Jugadores en el equipo: " + elemento[0])
+                #controllers.jugador_controller.Jugador_Controller.listar_jugadores(equipo)
+            #controllers.jugador_controller.Jugador_Controller.listar_jugadores(equipo)
         return eq_menu.Equipo_Menu.menu_equipos(database)
 
     def buscar_jugador_en_equipo(database):

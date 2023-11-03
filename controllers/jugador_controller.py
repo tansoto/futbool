@@ -27,48 +27,37 @@ class Jugador_Controller:
     def crear_jugador(database):
         jugador = Jugadores()
         id_equipo = input(
-            "Por favor ingrese el id del equipo al que pertenecera el jugador: "
-        )
-        existe_equipo1 = controllers.equipo_controller.Equipo_Controller.existe_equipo(
-            database, id_equipo
-        )
-
-        if existe_equipo1 is False:
+            "Por favor ingrese el id del equipo al que pertenecera el jugador: ")
+        existe = controllers.equipo_controller.Equipo_Controller.existe_equipo(database, id_equipo)
+        if existe is False:
             print("El equipo indicado no existe volviendo al menu...")
         else:
             id_jugador = input("Por favor ingrese id del jugador: ")
-            jugador.setIdJugador(id_jugador)
-            existe_jugador = Jugador_Controller.encontrar_jugador(
-                database, id_jugador)
+            existe_jugador = Jugador_Controller.encontrar_jugador(database, id_jugador)
             if existe_jugador is False:
-                jugador.setIdJugador(id_jugador)
-                jugador.setNombre(
-                    input("Por favor ingrese el nombre del jugador: "))
-                jugador.setEdad(
-                    input("Por favor ingrese la edad del jugador: "))
-                jugador.setPosicion(
-                    input("Por favor ingrese la posición del jugador: ")
-                )
-                jugador.setNumero(
-                    input("Por favor ingrese el número del jugador: "))
+                jugador.setNombre(input("Por favor ingrese el nombre del jugador: "))
+                jugador.setEdad(input("Por favor ingrese la edad del jugador: "))
+                jugador.setPosicion(input("Por favor ingrese la posición del jugador: "))
+                jugador.setNumero(input("Por favor ingrese el número del jugador: "))
                 jugador.setEquipo(id_equipo)
+                query= "insert into posicion (nombre) values ('" + jugador.getPosicion() + "') RETURNING id_posicion"#se crea la query para insertar la posicion
+                posicion=database.post(query)#se ejecuta la query y se guarda el id de la posicion
                 # se agrega el jugador a la nomina del equipo con la posicion en existe
-                database[existe_equipo1].agregarJugador(jugador)
-
+                query = "insert into jugadores (nombre,edad,numero,id_equipo,id_posicion)values('" + jugador.getNombre() + "','" + jugador.getEdad() + "','"+jugador.getNumero() +"','"+ str(id_equipo)+ "','" + str(posicion) + "')"#se crea la query para insertar el jugador
+                database.post(query)#se ejecuta la query
             else:
                 print("El id ingresado ya se encuentra en uso volviendo al menu...")
 
         return jug_menu.Jugador_Menu.menu_jugadores(database)
 
     def encontrar_jugador(database, id_jugador):
-        pos = 0
-        for equipo in database:
-            for jugador in equipo.getNomina():
-                if id_jugador == jugador.getIdJugador():
-                    return pos, jugador
-                else:
-                    pos = pos + 1
-        return False
+        query = ("select count(id_jugador) from Jugadores where id_jugador = '" + id_jugador + "'")
+        if database.get(query)[0][0] == 1:#cuenta cuantas veces encuentra ese id en la base de datos
+            return True
+        elif database.get(query)[0][0] == 0:
+            return False
+        else:
+            print(database.get(query))
 
     def editar_jugador(database):
         id_jugador = input("Por favor ingrese id del jugador a editar: ")
