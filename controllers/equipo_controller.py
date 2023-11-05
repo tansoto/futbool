@@ -16,22 +16,20 @@ class Equipo_Controller:
 
     def crear_equipo(database):
         equipo = Equipos()
-        id_equipo = input("Por favor ingrese id del equipo: ") #solo sirve para comprobar si el id de ese equipo existe y hay que añadirle que solo acepte numeros
-        existe = Equipo_Controller.existe_equipo(database, id_equipo)
-        if existe is False:
-            nombre = input("Por favor ingrese el nombre del equipo: ")
-            equipo.setNombre(nombre)
-            ciudad = input("Por favor ingrese la ciudad del equipo: ")
-            equipo.setCiudad(ciudad)
-            presidente = input("Por favor ingrese el presidente del equipo: ")
-            equipo.setPresidente(presidente)
-            query = "insert into Ciudad (nombre) values ('" + equipo.getCiudad() + "') RETURNING id_ciudad"
-            resultado = database.post(query)  # inserta ciudad y ya que pidio el returning resukltado es el id de la ciudad
-            query = ("insert into Equipos (nombre,presidente,id_ciudad) values ('"+ equipo.getNombre()+ "','"+ equipo.getPresidente()+ "','"+ str(resultado)+ "') RETURNING id_equipo")
-            database.post(query)  # inserta equipo
-            print("Equipo creado exitosamente")
-        else:
-            print("El id ingresado ya se encuentra en uso")
+
+
+        nombre = input("Por favor ingrese el nombre del equipo: ")
+        equipo.setNombre(nombre)
+        ciudad = input("Por favor ingrese la ciudad del equipo: ")
+        equipo.setCiudad(ciudad)
+        presidente = input("Por favor ingrese el presidente del equipo: ")
+        equipo.setPresidente(presidente)
+        query = "insert into Ciudad (nombre) values ('" + equipo.getCiudad() + "') RETURNING id_ciudad"
+        resultado = database.post(query)  # inserta ciudad y ya que pidio el returning resukltado es el id de la ciudad
+        query = ("insert into Equipos (nombre,presidente,id_ciudad) values ('"+ equipo.getNombre()+ "','"+ equipo.getPresidente()+ "','"+ str(resultado)+ "') RETURNING id_equipo")
+        database.post(query)  # inserta equipo
+        print("Equipo creado exitosamente")
+
         return eq_menu.Equipo_Menu.menu_equipos(database)
 
     def editar_equipo(database):
@@ -39,28 +37,24 @@ class Equipo_Controller:
         if Equipo_Controller.existe_equipo(database, id_equipo) is False:
             print("El equipo no existe")
         else:
-            pos = Equipo_Controller.existe_equipo(database, id_equipo)
-            nombre = input(
-                "Ingrese el nuevo nombre del equipo (Actual: "
-                + database[pos].getNombre()
-                + ",Enter para skip): "
-            )
+            nombre = input("Ingrese el nuevo Nombre (Actual: " + database.get("select nombre from Equipos where id_equipo = '" + id_equipo + "'")[0][0]+ ",Enter para skip): ")
             if nombre != "":
-                database[pos].setNombre(nombre)
-            ciudad = input(
-                "Ingrese la nueva ciudad del equipo (Actual: "
-                + database[pos].getCiudad()
-                + ",Enter para skip): "
-            )
+                query= ("update Equipos set nombre = '" + nombre + "' where id_equipo = '" + id_equipo + "'")
+                database.update(query)
+            #muestra la ciudad actual del equipo y pregunta si desea cambiarla
+            id_ciudad =database.get("select id_ciudad from Equipos where id_equipo = '" + id_equipo + "'")[0][0]
+            nombre_ciudad=database.get("select nombre from Ciudad where id_ciudad = '" + str(id_ciudad) + "'")[0][0]
+            ciudad = input("Ingrese la nueva Ciudad (Actual: " +nombre_ciudad+ ",Enter para skip): ")
             if ciudad != "":
-                database[pos].setCiudad(ciudad)
-            presidente = input(
-                "Ingrese el nuevo presidente (Actual: "
-                + database[pos].getPresidente()
-                + ",Enter para skip): "
-            )
+                query = "insert into Ciudad (nombre) values ('" + ciudad + "') RETURNING id_ciudad"
+                resultado = database.post(query)  # inserta ciudad y ya que pidio el returning resukltado es el id de la ciudad
+                query = ("update Equipos set id_ciudad = '" + str(resultado) + "' where id_equipo = '" + str(id_equipo) + "'")
+                database.update(query)
+            #muestra el presidente actual del equipo y pregunta si desea cambiarlo
+            presidente = input("Ingrese el nuevo presidente (Actual: " + database.get("select presidente from Equipos where id_equipo = '" + id_equipo + "'")[0][0]+ ",Enter para skip): ")
             if presidente != "":
-                database[pos].setPresidente(presidente)
+                query = ("update Equipos set presidente = '" + presidente + "' where id_equipo = '" + id_equipo + "'")
+                database.update(query)
             print("Equipo editado exitosamente")
         return eq_menu.Equipo_Menu.menu_equipos(database)
 
@@ -68,22 +62,12 @@ class Equipo_Controller:
         query = ("select * from Equipos")
         equipos = database.get(query)
         for equipo in equipos:
-            print("********** Equipo con id: " + str(equipo[0]) + "********** ")
-            print(
-                "nombre: "
-                + str(equipo[1])
-                + "\n"
-                + "ciudad: "
-                + str(equipo[2])
-                + "\n"
-                + "presidente: "
-                + str(equipo[3])
-                + "\n"
-            )
-            #print("Jugadores en el equipo: " + str(equipo[0]))
-            #controllers.jugador_controller.Jugador_Controller.listar_jugadores(equipo)
-            #print("Jugadores en el equipo: " + equipo.getIdEquipo())
-            #controllers.jugador_controller.Jugador_Controller.listar_jugadores(equipo)
+            query = ("select nombre from Ciudad where id_ciudad = '" + str(equipo[3]) + "'")#es el id de la ciudad en la tabla equipo
+            ciudad = database.get(query)
+            print("********** Equipo: " + str(equipo[0]) + "********** ")
+            print("nombre: "+ str(equipo[1])+ "\n"+ "Presidente: "+ str(equipo[2])+ "\n"+ "Ciudad: "+ str(ciudad[0][0])+"\n" )
+            print("Jugadores en el equipo: " + str(equipo[1]))
+            controllers.jugador_controller.Jugador_Controller.listar_jugadores(database,equipo[0])
         return eq_menu.Equipo_Menu.menu_equipos(database)
 
     def eliminar_equipo(database):
@@ -95,7 +79,6 @@ class Equipo_Controller:
             #print("El siguiente equipo sera eliminado: " + database[existe].getNombre())
             respuesta = str(input("¿Desea continuar? S/N: "))
             if respuesta.upper() == "S":
-                #database.remove(database[existe])
                 query = ("delete from Equipos where id_equipo = '" + id_equipo + "'") #borra el equipo con el id indicado 
                 database.delete(query)
                 print("Equipo eliminado")
@@ -108,20 +91,13 @@ class Equipo_Controller:
         else:
             query = ("select * from Equipos where id_equipo = '" + id_equipo + "'")
             equipo = database.get(query)
+
             for elemento in equipo:
+                query = ("select nombre from Ciudad where id_ciudad = '" + str(elemento[3]) + "'")#es el id de la ciudad en la tabla equipo
+                ciudad = database.get(query)
                 print("********** Equipo: " + str(elemento[0]) + "********** ")
-                print(
-                    "nombre: "
-                    + str(elemento[1])
-                    + "\n"
-                    + "ciudad: "
-                    + str(elemento[2])
-                    + "\n"
-                    + "presidente: "
-                    + str(elemento[3])
-                    + "\n"
-                )
-                #print("Jugadores en el equipo: " + elemento[0])
+                print("nombre: "+ str(elemento[1])+ "\n"+ "Presidente: "+ str(elemento[2])+ "\n"+ "Ciudad: "+ str(ciudad[0][0])+"\n" )
+                print("Jugadores en el equipo: " + str(elemento[1]))
                 #controllers.jugador_controller.Jugador_Controller.listar_jugadores(equipo)
             #controllers.jugador_controller.Jugador_Controller.listar_jugadores(equipo)
         return eq_menu.Equipo_Menu.menu_equipos(database)
@@ -129,29 +105,23 @@ class Equipo_Controller:
     def buscar_jugador_en_equipo(database):
         id_jugador = input("Ingrese el ID del jugador a consultar: ")
         existe_jugador = Jugador_Controller.encontrar_jugador(database, id_jugador)
-        pos_equipo = Equipo_Controller.existe_equipo(
-            database, input("Ingrese el ID del equipo a consultar: ")
-        )
-        equipo = database[pos_equipo]
+        id_equipo = input("Ingrese el ID del equipo a consultar: ")
+        pos_equipo = Equipo_Controller.existe_equipo(database,id_equipo)
         if pos_equipo is False:
             print("NO hay equipo")
-
         else:
             if existe_jugador is False:
                 print("NO hay jugador")
-
             else:
-                for jugador in equipo.getNomina():
-                    if jugador.getIdJugador() == id_jugador:
-                        print(
-                            "El jugador: "
-                            + jugador.getNombre()
-                            + " pertenece al equipo: "
-                            + equipo.getNombre()
-                        )
-                        return eq_menu.Equipo_Menu.menu_equipos(database)
-
-            print(" no pertenece al equipo: ")
+                query = ("select * from Jugadores where id_jugador = '" + id_jugador + "'")
+                jugador = database.get(query)
+                for atributos in jugador:#recorre los campos del jugador
+                    print("\n\n\n")
+                    if str(id_equipo) == str(atributos[4]):#si coinciden los id de equipo
+                        print("Nombre: "+str(atributos[1])+ " pertenece al equipo")
+                    else:
+                        print(" no pertenece al equipo: ")
+        print("\n\n\n")
         return eq_menu.Equipo_Menu.menu_equipos(database)
 
     def eliminar_jugador(database):
@@ -160,30 +130,20 @@ class Equipo_Controller:
         if encontrar is False:
             print("Jugador no encontrado")
         else:
-            pos_jugador = encontrar[0]
-            jugador = encontrar[1]
-            pos_equipo = controllers.equipo_controller.Equipo_Controller.existe_equipo(
-                database, jugador.getEquipo()
-            )
-            equipo = jugador.getEquipo()
-            pos = controllers.equipo_controller.Equipo_Controller.existe_equipo(
-                database, equipo
-            )
-            if pos is not False:
-                print("\n\n Se mete a borrar")
-                database[pos_equipo].getNomina().pop(pos_jugador)
-                controllers.equipo_controller.Equipo_Controller.listar_equipos(database)
-            print("Jugador eliminado correctamente")
+            #print("El siguiente Jugador sera eliminado: " + database[existe].getNombre())
+            respuesta = str(input("¿Desea continuar? S/N: "))
+            if respuesta.upper() == "S":
+                query = ("delete from Jugadores where id_jugador = '" + id_jugador + "'") #borra el jugadorcon el id indicado 
+                database.delete(query)
+                print("Jugador eliminado")
         return eq_menu.Equipo_Menu.menu_equipos(database)
 
     def ver_jugador(database):
         id_jugador = input("Ingrese el ID del jugador a consultar: ")
         existe_jugador = Jugador_Controller.encontrar_jugador(database, id_jugador)
-        pos_equipo = Equipo_Controller.existe_equipo(
-            database, input("Ingrese el ID del equipo a consultar: ")
-        )
-        equipo = database[pos_equipo]
-        if pos_equipo is False:
+        id_equipo = input("Ingrese el ID del equipo a consultar: ")
+        existe = Equipo_Controller.existe_equipo(database, id_equipo)
+        if existe is False:
             print("NO hay equipo")
 
         else:
@@ -191,24 +151,19 @@ class Equipo_Controller:
                 print("NO hay jugador")
 
             else:
-                for jugador in equipo.getNomina():
-                    if jugador.getIdJugador() == id_jugador:
-                        print("\n")
-                        print("\n")
-                        print("\n")
-                        print("Nombre del jugador: " + jugador.getNombre())
-
-                        print("Edad del jugador: " + jugador.getEdad())
-
-                        print("Posicion del jugador: " + jugador.getPosicion())
-
-                        print("Numero del jugador: " + jugador.getNumero())
-
-                        print("Id de equipo del jugador: " + jugador.getEquipo())
-                        print("\n")
-                        print("\n")
-                        print("\n")
-                        return eq_menu.Equipo_Menu.menu_equipos(database)
+                query= ("select * from Jugadores where id_jugador = '" + id_jugador + "'")
+                jugador = database.get(query)
+                for atributos in jugador:#recorre los campos del jugador
+                    print("\n\n\n")
+                    print("Nombre:"+str(atributos[1]))
+                    print("Edad: "+str(atributos[2]))
+                    print("Numero: "+str(atributos[3]))
+                    query= ("select nombre from posicion where id_posicion = '" + str(atributos[5]) + "'")
+                    nombre_posicion= database.get(query)
+                    print("Posicion: "+str(nombre_posicion[0][0])) 
+                    print("Id_equipo: "+str(atributos[4]))  
+                    print("\n\n\n") 
+                    return eq_menu.Equipo_Menu.menu_equipos(database)
 
             print("No pertenece al equipo: ")
         return eq_menu.Equipo_Menu.menu_equipos(database)

@@ -5,24 +5,19 @@ import controllers
 
 
 class Jugador_Controller:
-    def listar_jugadores(equipo):
-        nomina = equipo.getNomina()
-        for jugadores in nomina:
-            print("----------Jugador: " + jugadores.getIdJugador() + "----------")
-            print(
-                "Nombre jugador:"
-                + jugadores.getNombre()
-                + "\n"
-                + "Edad jugador: "
-                + jugadores.getEdad()
-                + "\n"
-                + "Posicion jugador: "
-                + jugadores.getPosicion()
-                + "\n"
-                + "Numero jugador: "
-                + jugadores.getNumero()
-                + "\n"
-            )
+    def listar_jugadores(database,id_equipo):
+        nomina = database.get("select * from jugadores where id_equipo = '" + str(id_equipo) + "'")
+        for jugador in nomina:
+            print("----------Jugador id: " + str(jugador[0]) + "----------")
+        
+            print("Nombre:"+str(jugador[1]))
+            print("Edad: "+str(jugador[2]))
+            print("Numero: "+str(jugador[3]))
+            query= ("select nombre from posicion where id_posicion = '" + str(jugador[5]) + "'")
+            nombre_posicion= database.get(query)
+            print("Posicion: "+str(nombre_posicion[0][0])) 
+            print("Id_equipo: "+str(jugador[4]))  
+            
 
     def crear_jugador(database):
         jugador = Jugadores()
@@ -65,63 +60,36 @@ class Jugador_Controller:
         if encontrar is False:
             print("Jugador no encontrado")
         else:
-            pos_jugador = encontrar[0]
-            jugador = encontrar[1]
-            pos_equipo = controllers.equipo_controller.Equipo_Controller.existe_equipo(
-                database, jugador.getEquipo()
-            )
-            nombre = input(
-                "Ingrese el nuevo nombre del jugador (Actual: "
-                + jugador.getNombre()
-                + ",Enter para skip): "
-            )
+            nombre = input("Ingrese el nuevo nombre del jugador (Actual: "+ database.get("select nombre from Jugadores where id_jugador = '" + id_jugador + "'")[0][0] + ",Enter para skip): ")
             if nombre != "":
-                jugador.setNombre(nombre)
-            edad = input(
-                "Ingrese la nueva edad del jugador (Actual: "
-                + jugador.getEdad()
-                + ",Enter para skip): "
-            )
+                query = ("update Jugadores set nombre = '" + nombre +"' where id_jugador = '" + id_jugador + "'")
+                database.update(query)
+            edad = str(input("Ingrese la nueva edad del jugador (Actual: "+ str(database.get("select edad from Jugadores where id_jugador = '" + str(id_jugador) + "'")[0][0]) + ",Enter para skip): "))
             if edad != "":
-                jugador.setEdad(edad)
-            posicion = input(
-                "Ingrese la nueva posicion del jugador (Actual: "
-                + jugador.getPosicion()
-                + ",Enter para skip): "
-            )
+                query = ("update Jugadores set edad = '" + edad +"' where id_jugador = '" + id_jugador + "'")
+                database.update(query)
+            id_posicion = database.get("select id_posicion from Jugadores where id_jugador = '" + id_jugador + "'")
+            nombre_posicion = str(database.get("select nombre from Posicion where id_posicion = '" + str(id_posicion) + "'"))[0][0]
+            posicion = str(input("Ingrese la nueva posicion del jugador (Actual: "+ nombre_posicion + ",Enter para skip): "))
             if posicion != "":
-                jugador.setPosicion(posicion)
+                query = "insert into Posicion (nombre) values ('" + posicion + "') RETURNING id_posicion"
+                # inserta ciudad y ya que pidio el returning resukltado es el id de la ciudad
+                resultado = database.post(query)
+                query = ("update Jugadores set id_posicion = '" + str(resultado) +"' where id_jugador = '" + str(id_jugador) + "'")
+                database.update(query)
             numero = input(
-                "Ingrese el nuevo numero del jugador (Actual: "
-                + jugador.getNumero()
-                + ",Enter para skip): "
-            )
+                "Ingrese el nuevo numero del jugador (Actual: "+ str(database.get("select numero from Jugadores where id_jugador = '" + id_jugador + "'")[0][0]) + ",Enter para skip): ")
             if numero != "":
-                jugador.setNumero(numero)
-            equipo = input(
-                "Ingrese el nuevo id de equipo del jugador (Actual: "
-                + jugador.getEquipo()
-                + ",Enter para skip): "
-            )
-            if equipo != "":
-                pos = controllers.equipo_controller.Equipo_Controller.existe_equipo(
-                    database, equipo
-                )
-                if pos is not False:
-                    jugador.setEquipo(equipo)
-                    database[pos].agregarJugador(jugador)  # revisarrr
-                    print(
-                        "\n\nlargoooooooooo lista equipos "
-                        + str((database[pos_equipo].getNomina().index(jugador)))
-                    )
-                    print(
-                        "\n\njugador a borrar lista equipos "
-                        + str((database[pos_equipo].getNomina()[pos_jugador]))
-                    )
-                    database[pos_equipo].getNomina().pop(pos_jugador)
-                    controllers.equipo_controller.Equipo_Controller.listar_equipos(
-                        database
-                    )
-            # database[pos_equipo].getNomina().append(jugador)#revisar# error encontrado era donde se borraba quedaba en 0 la lista ademas se agregaba 2 veces
-            print("Jugador editado correctamente")
+                query = ("update Jugadores set numero = '" + numero +"' where id_jugador = '" + id_jugador + "'")
+                database.update(query)
+            id_equipo = database.get("select id_equipo from Jugadores where id_jugador = '" + str(id_jugador) + "'")[0][0]
+            nombre_equipo = database.get("select nombre from Equipos where id_equipo = '" + str(id_equipo) + "'")[0][0]
+            id_nuevo_equipo = input("Ingrese el nuevo id de equipo del jugador (Actual: "+ nombre_equipo+ ",Enter para skip): ")
+            if id_nuevo_equipo != "":
+                existe_nuevo_equipo = controllers.equipo_controller.Equipo_Controller.existe_equipo(database, id_nuevo_equipo)
+                if existe_nuevo_equipo is not False:
+                    # inserta equipo y ya que pidio el returning resukltado es el id de la ciudad
+                    query = ("update Jugadores set id_equipo = '" + str(id_nuevo_equipo) +"' where id_jugador = '" + str(id_jugador) + "'")
+                    database.update(query)
+                    print("Jugador editado correctamente")
         jug_menu.Jugador_Menu.menu_jugadores(database)

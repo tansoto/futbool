@@ -19,4 +19,6 @@ class Main_Menu:
             case "3":
                 exit()
             case _:
-                print("Opción erronea")
+                print("Opción erronea") 
+                Main_Menu.menu_principal(database)
+                

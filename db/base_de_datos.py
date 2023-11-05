@@ -51,8 +51,9 @@ class BaseDeDatos:
         except psycopg2.Error as e:
             if e == "no results to fetch":#significa que fetch no se ejecuto correctamente ya que la query no tiene un returning
                 return True
-            print("Error al conectar a la base de datos:", e)
-            return False
+            else: 
+                print("Error al conectar a la base de datos:", e)
+                return False
 
     # metodo para actualizar datos en la base de datos
     def update(self, query):
